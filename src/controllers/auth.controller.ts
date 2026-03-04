@@ -10,6 +10,19 @@ export const register = async (req: Request, res: Response) => {
   if (!username || !email || !password) {
     return errorResponse(res, "Please provide all fields");
   }
+
+  if (username.includes(" ")) {
+    return errorResponse(res, "Username cannot contain spaces");
+  }
+  if (username.length < 3) {
+    return errorResponse(res, "Username must be at least 3 characters");
+  }
+  if (!/\S+@\S+\.\S+/.test(email)) {
+    return errorResponse(res, "Please enter a valid email");
+  }
+  if (password.length < 6) {
+    return errorResponse(res, "Password must be at least 6 characters");
+  }
   const existingUser = await User.findOne({ $or: [{ username }, { email }] });
   if (existingUser) {
     return errorResponse(res, "Username or email already exists");
