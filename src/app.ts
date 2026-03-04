@@ -8,5 +8,9 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
+app.use('/', (req, res) => {
+    res.status(200).json({ status: "Server is running." });
+});
+
 
 export default app;

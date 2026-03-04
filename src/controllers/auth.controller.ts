@@ -2,15 +2,19 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/user.model";
-
-const generateToken = (id: string) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET!, {
-    expiresIn: "7d",
-  });
-};
+import { successResponse, errorResponse } from "../utils/response";
+import { generateAccessToken, generateRefreshToken } from "../utils/jwt";
 
 export const register = async (req: Request, res: Response) => {
   const { username, email, password } = req.body;
+  if (!username || !email || !password) {
+    return errorResponse(res, "Please provide all fields");
+  }
+  const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+  if (existingUser) {
+    return errorResponse(res, "Username or email already exists");
+  }
+
 
   const hashed = await bcrypt.hash(password, 10);
 
@@ -20,10 +24,13 @@ export const register = async (req: Request, res: Response) => {
     password: hashed,
   });
 
-  const token = generateToken(user._id.toString());
+  // const token = generateToken(user._id.toString());
+  const accessToken = generateAccessToken({ id: user._id });
+  const refreshToken = generateRefreshToken({ id: user._id });
 
-  res.json({
-    token,
+  return successResponse(res, "User registered successfully", {
+    accessToken,
+    refreshToken,
     user: {
       id: user._id,
       username: user.username,
@@ -35,16 +42,20 @@ export const register = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   const { username, password } = req.body;
 
-  const user:any = await User.findOne({ username });
-  if (!user) return res.status(400).json({ message: "User not found" });
+  const user: any = await User.findOne({ username });
+
+  if (!user) return errorResponse(res, "User not found");
 
   const match = await bcrypt.compare(password, user.password);
-  if (!match) return res.status(400).json({ message: "Wrong password" });
 
-  const token = generateToken(user._id.toString());
+  if (!match) return errorResponse(res, "Wrong password");
 
-  res.json({
-    token,
+  const accessToken = generateAccessToken({ id: user._id });
+  const refreshToken = generateRefreshToken({ id: user._id });
+
+  return successResponse(res, "Login successful", {
+    accessToken,
+    refreshToken,
     user: {
       id: user._id,
       username: user.username,
@@ -56,7 +67,7 @@ export const login = async (req: Request, res: Response) => {
 export const getMe = async (req: any, res: Response) => {
   const user = await User.findById(req.user.id);
 
-  res.json({
+  return successResponse(res, "User fetched successfully", {
     user: {
       id: user?._id,
       username: user?.username,
