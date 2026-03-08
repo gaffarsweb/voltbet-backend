@@ -13,6 +13,7 @@ export const getBalance = async (req: Request, res: Response) => {
   const cachedBalance = await redisClient.get(cacheKey);
 
   if (cachedBalance) {
+    // console.log('it is in redis', cachedBalance)
     return successResponse(res, "Balance fetched from cache", {
       balance: cachedBalance,
     });
