@@ -5,7 +5,7 @@ const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "default_refresh_secret
 
 export const generateAccessToken = (payload: any) => {
   return jwt.sign(payload, ACCESS_SECRET, {
-    expiresIn: "15m",
+    expiresIn: "5d",
   });
 };
 

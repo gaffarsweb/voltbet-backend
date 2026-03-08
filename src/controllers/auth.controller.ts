@@ -4,6 +4,8 @@ import jwt from "jsonwebtoken";
 import User from "../models/user.model";
 import { successResponse, errorResponse } from "../utils/response";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt";
+import { createWalletAddress } from "../utils/walletAddressFactory";
+
 
 export const register = async (req: Request, res: Response) => {
   const { username, email, password } = req.body;
@@ -38,8 +40,12 @@ export const register = async (req: Request, res: Response) => {
   });
 
   // const token = generateToken(user._id.toString());
-  const accessToken = generateAccessToken({ id: user._id });
+  const accessToken = generateAccessToken({ user });
   const refreshToken = generateRefreshToken({ id: user._id });
+
+  if(user._id){
+   await createWalletAddress(user._id)
+  }
 
   return successResponse(res, "User registered successfully", {
     accessToken,
@@ -47,15 +53,25 @@ export const register = async (req: Request, res: Response) => {
     user: {
       id: user._id,
       username: user.username,
-      balance: user.balance,
     },
   });
 };
 
 export const login = async (req: Request, res: Response) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
 
-  const user: any = await User.findOne({ username });
+  if (!email || !password) {
+    return errorResponse(res, "Please provide all fields");
+  }
+
+  if (!/\S+@\S+\.\S+/.test(email)) {
+    return errorResponse(res, "Please enter a valid email");
+  }
+  if (password.length < 6) {
+    return errorResponse(res, "Password must be at least 6 characters");
+  }
+
+  const user: any = await User.findOne({ email });
 
   if (!user) return errorResponse(res, "User not found");
 
@@ -84,7 +100,6 @@ export const getMe = async (req: any, res: Response) => {
     user: {
       id: user?._id,
       username: user?.username,
-      balance: user?.balance,
     },
   });
 };

@@ -15,7 +15,7 @@ export const protect = (
   if (!token) return res.status(401).json({ message: "No token" });
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    const decoded = jwt.verify(token, 'default_access_secret');
     req.user = decoded;
     next();
   } catch {
