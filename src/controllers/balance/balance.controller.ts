@@ -32,7 +32,7 @@ export const getBalance = async (req: Request, res: Response) => {
 
   // 3️⃣ Store in Redis for 5 hours
   await redisClient.set(cacheKey, balance, {
-    EX: 60 * 60 * 5, // 5 hours
+    EX: 60 * 60 * 10, // 10 hours
   });
 
   return successResponse(res, "Balance fetched successfully", {
