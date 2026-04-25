@@ -7,38 +7,65 @@ export const REDIS_KEY__BINANCE_BTC_USDT = 'binance:btc_usdt';
 export const REDIS_KEY__BINANCE_TRX_USDT = 'binance:trx_usdt';
 export const REDIS_KEY__BINANCE_SOL_USDT = 'binance:sol_usdt';
 export const REDIS_KEY__BINANCE_USDC_USDT = 'binance:usdc_usdt';
+export const REDIS_KEY__BINANCE_ETH_USDC = 'binance:eth_usdc';
+export const REDIS_KEY__BINANCE_BTC_USDC = 'binance:btc_usdc';
+export const REDIS_KEY__BINANCE_TRX_USDC = 'binance:trx_usdc';
+export const REDIS_KEY__BINANCE_SOL_USDC = 'binance:sol_usdc';
 
-// Symbols to fetch
-const EXCHANGE_SYMBOLS = [
-  { symbol: 'ETHUSDT', key: REDIS_KEY__BINANCE_ETH_USDT },
-  { symbol: 'BTCUSDT', key: REDIS_KEY__BINANCE_BTC_USDT },
-  { symbol: 'TRXUSDT', key: REDIS_KEY__BINANCE_TRX_USDT },
-  { symbol: 'SOLUSDT', key: REDIS_KEY__BINANCE_SOL_USDT },
-  { symbol: 'USDCUSDT', key: REDIS_KEY__BINANCE_USDC_USDT },
-];
+// Symbols to fetch in one API call
+const SYMBOLS_TO_FETCH = '["SOLUSDT","ETHUSDT","TRXUSDT","BTCUSDT","SOLUSDC","ETHUSDC","TRXUSDC","BTCUSDC"]';
 
 /**
- * Update exchange rates from Binance API
+ * Update exchange rates from Binance API (single API call)
  * Should be called every minute via cron
  */
 export async function updateBinanceExchangeRates(): Promise<void> {
   try {
     const binanceApi = getBinanceApi();
 
-    // Fetch each symbol individually for better error handling
+    // Single API call for all symbols
+    const binanceResponse = await binanceApi.symbolPriceTicker({
+      symbols: SYMBOLS_TO_FETCH,
+    });
+
+    if (!binanceResponse?.length) {
+      console.log('No exchange rates received from Binance');
+      return;
+    }
+
+    // Process all responses
     await Promise.all(
-      EXCHANGE_SYMBOLS.map(async ({ symbol, key }) => {
+      binanceResponse.map(async (curr) => {
         try {
-          const response = await binanceApi.symbolPriceTicker({ symbol });
-          
-          if (response?.price) {
-            await redisClient.setex(key, 3600, response.price);
-            console.log(`✅ Updated ${symbol}: ${response.price}`);
-          }else{
-            console.log('not found rate for', symbol);
+          let key: string | null = null;
+
+          if (curr.symbol === 'SOLUSDT') {
+            key = REDIS_KEY__BINANCE_SOL_USDT;
+          } else if (curr.symbol === 'ETHUSDT') {
+            key = REDIS_KEY__BINANCE_ETH_USDT;
+          } else if (curr.symbol === 'TRXUSDT') {
+            key = REDIS_KEY__BINANCE_TRX_USDT;
+          } else if (curr.symbol === 'BTCUSDT') {
+            key = REDIS_KEY__BINANCE_BTC_USDT;
+          } else if (curr.symbol === 'USDTUSDT') {
+            key = REDIS_KEY__BINANCE_USDT_USDT;
+          } else if (curr.symbol === 'SOLUSDC') {
+            key = REDIS_KEY__BINANCE_SOL_USDC;
+          } else if (curr.symbol === 'ETHUSDC') {
+            key = REDIS_KEY__BINANCE_ETH_USDC;
+          } else if (curr.symbol === 'TRXUSDC') {
+            key = REDIS_KEY__BINANCE_TRX_USDC;
+          } else if (curr.symbol === 'BTCUSDC') {
+            key = REDIS_KEY__BINANCE_BTC_USDC;
+          }
+
+          if (key) {
+            // Use redis v4 setex method
+            await redisClient.setEx(key, 3600, curr.price);
+            console.log(`✅ Updated ${curr.symbol}: ${curr.price}`);
           }
         } catch (err) {
-          console.error(`Failed to fetch ${symbol}:`, err);
+          console.error(`Failed to store ${curr.symbol}:`, err);
         }
       })
     );
@@ -55,8 +82,8 @@ export async function updateBinanceExchangeRates(): Promise<void> {
 export async function getExchangeRate(currency: string): Promise<number> {
   const keyMap: Record<string, string> = {
     'ETH': REDIS_KEY__BINANCE_ETH_USDT,
-    'USDT': REDIS_KEY__BINANCE_USDC_USDT,
-    'USDC': REDIS_KEY__BINANCE_USDC_USDT,
+    'USDT': REDIS_KEY__BINANCE_ETH_USDT,
+    'USDC': REDIS_KEY__BINANCE_ETH_USDC,
     'BTC': REDIS_KEY__BINANCE_BTC_USDT,
     'TRX': REDIS_KEY__BINANCE_TRX_USDT,
     'SOL': REDIS_KEY__BINANCE_SOL_USDT,
