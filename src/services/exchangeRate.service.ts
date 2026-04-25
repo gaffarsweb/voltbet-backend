@@ -47,8 +47,6 @@ export async function updateBinanceExchangeRates(): Promise<void> {
             key = REDIS_KEY__BINANCE_TRX_USDT;
           } else if (curr.symbol === 'BTCUSDT') {
             key = REDIS_KEY__BINANCE_BTC_USDT;
-          } else if (curr.symbol === 'USDTUSDT') {
-            key = REDIS_KEY__BINANCE_USDT_USDT;
           } else if (curr.symbol === 'SOLUSDC') {
             key = REDIS_KEY__BINANCE_SOL_USDC;
           } else if (curr.symbol === 'ETHUSDC') {
