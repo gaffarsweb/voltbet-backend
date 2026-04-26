@@ -16,7 +16,7 @@ export const protect = (
 
   try {
     const decoded = jwt.verify(token, 'default_access_secret');
-    req.user = decoded?.user;
+    req.user = decoded?.id ? decoded : decoded?.user;
     next();
   } catch {
     res.status(401).json({ message: "Invalid token" });

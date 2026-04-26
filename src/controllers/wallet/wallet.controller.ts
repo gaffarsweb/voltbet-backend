@@ -6,7 +6,7 @@ import tokenModel from "../../models/token.model";
 
 export const getWalletByNetworkUser = async (req: Request, res: Response) => {
     try {
-        const userId = req?.user?._id;
+        const userId = req?.user?._id || req?.user?.id;
         console.log("User ID:", userId);
         const { networkId, tokenSymbol } = req?.query;
         const network: any = await networkModel.findById(networkId);
