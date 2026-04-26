@@ -3,7 +3,8 @@ import cors from "cors";
 import authRoutes from "./routes/auth.routes";
 import balanceRoutes from "./routes/balance.routes";
 import networkRoutes from "./routes/network.routes";
-import walletRoutes from "./routes/wallet.routes"
+import walletRoutes from "./routes/wallet.routes";
+import depositRoutes from "./routes/deposit.routes";
 const app = express();
 
 app.use(
@@ -18,6 +19,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/balance", balanceRoutes);
 app.use("/api/network", networkRoutes);
 app.use("/api/wallet", walletRoutes);
+app.use("/api/deposit", depositRoutes);
 
 app.use('/', (req, res) => {
     res.status(200).json({ status: "Server is running." });
